@@ -1,0 +1,95 @@
+---
+
+#setting up webserver
+
+- name: "installing webserver"
+  yum:
+    name: "httpd"
+    state: present
+
+- name: "installing latest php version"
+  shell: amazon-linux-extras install php7.4 -y
+
+- name: "updaing main apache conf"
+  template: 
+    src: "httpd.conf.tmpl"
+    dest: "/etc/httpd/conf/httpd.conf"
+  notify:
+    - "restart apache"
+
+- name: "creating virtual host conf"
+  template:
+    src: "virtualhost.conf.tmpl"
+    dest: "/etc/httpd/conf.d/{{ httpd_domain }}.conf"
+    owner: "{{ httpd_user }}"
+    group: "{{ httpd_group }}"
+  notify:
+    - "restart apache"
+
+- name: "creating docroot for virtual host {{ httpd_domain }}"
+  file:
+    path: "/var/www/html/{{ httpd_domain }}"
+    state: directory
+    owner: "{{ httpd_user }}"
+    group: "{{ httpd_group }}"
+  notify:
+    - "restart apache"
+
+#setting up mysql server 
+
+- name: "installing mariadb"
+  yum:
+    name: 
+      - mariadb-server
+      - MySQL-python
+    state: present
+
+- name: "starting and enabling services"
+  service: 
+    name: "mariadb"
+    state: restarted
+    enabled: true 
+
+
+- name: "setting root pass "
+  ignore_errors: true
+  mysql_user:
+    login_user: "root"
+    login_password: ""
+    user: "root"
+    password: "{{ mysql_root_password }}"
+    host_all: true
+
+- name: "deleting Anonymous user"
+  mysql_user:
+    login_user: "root"
+    login_password: "{{ mysql_root_password }}"
+    user: ""
+    host_all: true
+    state: absent
+
+- name: "removing test db"
+  mysql_db:
+    login_user: "root"
+    login_password: "{{ mysql_root_password }}"
+    name: "test"
+    state: absent
+
+
+- name: "adding a new db"
+  mysql_db:
+    login_user: "root"
+    login_password: "{{ mysql_root_password }}"
+    name: "{{ mysql_new_db }}"
+    state: present
+
+- name: "adding a new user and giving permission over new db"
+  mysql_user:
+    login_user: "root"
+    login_password: "{{ mysql_root_password }}"
+    name: "{{ mysql_new_user }}"
+    user: "{{ mysql_new_user }}"
+    host: "localhost"
+    state: present
+    password: "{{ mysql_new_user_pass }}" 
+    priv: "{{ mysql_new_db }}.*:ALL"

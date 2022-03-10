@@ -1,0 +1,9 @@
+---
+httpd_user: "apache"
+httpd_group: "apache"
+httpd_port: 80
+httpd_domain: "vhost_domain_name"
+mysql_root_password: "mysql_root_pass"
+mysql_new_user: "mysql_new_user"
+mysql_new_user_pass: "mysql_new_user_pass"
+mysql_new_db: "new_db"
